@@ -545,25 +545,49 @@ type User struct {
 	EnableCustomPhotoURL bool                  `json:"enable_custom_photo_url,omitempty" xml:"enable_custom_photo_url,omitempty"` // Indicates if custom photo URL is enabled.
 	ExtensionAttributes  []*ExtensionAttribute `json:"extension_attributes,omitempty" xml:"extension_attributes,omitempty"`       // Extension attributes
 	FullName             string                `json:"full_name,omitempty" xml:"full_name,omitempty"`                             // Full name of the user.
-	LDAPServer           []*JamfProperty       `json:"ldap_server,omitempty" xml:"ldap_server,omitempty"`                         // LDAP server information.
-	Links                []*UserLink           `json:"links,omitempty" xml:"links,omitempty"`                                     // Links associated with the user.
+	LDAPServer           *JamfProperty         `json:"ldap_server,omitempty" xml:"ldap_server,omitempty"`                         // LDAP server information.
+	Links                *UserLinks            `json:"links,omitempty" xml:"links,omitempty"`                                     // Links associated with the user.
 	ManagedAppleID       string                `json:"managed_apple_id,omitempty" xml:"managed_apple_id,omitempty"`               // Managed Apple ID.
 	PhoneNumber          string                `json:"phone_number,omitempty" xml:"phone_number,omitempty"`                       // Phone number of the user.
 	Position             string                `json:"position,omitempty" xml:"position,omitempty"`                               // Position of the user.
-	Sites                []*Site               `json:"sites,omitempty" xml:"sites,omitempty"`                                     // Sites
-	UserGroups           []*UserGroup          `json:"user_groups,omitempty" xml:"user_groups,omitempty"`                         // Groups the user belongs to.
+	Sites                []*Site               `json:"sites,omitempty" xml:"sites>site,omitempty"`                                // Sites
+	UserGroups           UserGroups            `json:"user_groups,omitempty" xml:"user_groups,omitempty"`                         // Groups the user belongs to.
 }
 
 // UserLink represents a link associated with a user.
-type UserLink struct {
-	Computer          []*Computer `json:"computer,omitempty" xml:"computer,omitempty"`                         // Computer information.
-	TotalVPPCodeCount int         `json:"total_vpp_code_count,omitempty" xml:"total_vpp_code_count,omitempty"` // Total VPP code count.
+type UserLinks struct {
+	Computer          []*JamfProperty `json:"computers,omitempty" xml:"computers,omitempty"`                       // Computer information.
+	Peripherals       []*JamfProperty `json:"peripherals,omitempty" xml:"peripherals,omitempty"`                   // Peripherals information.
+	MobileDevices     []*JamfProperty `json:"mobile_devices,omitempty" xml:"mobile_devices,omitempty"`             // Mobile Devices information.
+	TotalVPPCodeCount int             `json:"total_vpp_code_count,omitempty" xml:"total_vpp_code_count,omitempty"` // Total VPP code count.
 }
 
-// UserGroup represents a group that a user belongs to.
+// UserGroups represents a list of user groups in the Jamf Pro API.
+type UserGroups struct {
+	Size   int           `json:"size" xml:"size"`              // Size of the user groups list.
+	Groups *[]*UserGroup `json:"user_groups" xml:"user_group"` // List of JSS User Groups
+}
+
+// UserGroup represents a group that a user belongs to (Smart/Static).
 type UserGroup struct {
 	*JamfProperty
-	IsSmart bool `json:"is_smart,omitempty" xml:"is_smart,omitempty"` // Indicates if the group is a smart group.
+	IsSmart          bool         `json:"is_smart" xml:"is_smart"`                                           // Indicates if the group is a smart group.
+	IsNotifyOnChange bool         `json:"is_notify_on_change,omitempty" xml:"is_notify_on_change,omitempty"` // Indicates if notifications are enabled for changes.
+	Site             *Site        `json:"site,omitempty" xml:"site,omitempty"`                               // Site information of the group.
+	Criteria         []*Criterion `json:"criteria,omitempty" xml:"criteria>criterion,omitempty"`             // Criteria for the smart group.
+	Size             int          `xml:"users>size,omitempty"`                                               // Member size of the group.
+	Users            []*User      `json:"users,omitempty" xml:"users>user,omitempty"`                        // List of users in the group.
+}
+
+// Criterion represents a criterion for a smart group or search.
+type Criterion struct {
+	Name               string `json:"name,omitempty" xml:"name,omitempty"`                   // Name of the criterion.
+	Priority           int    `json:"priority,omitempty" xml:"priority,omitempty"`           // Priority of the criterion.
+	AndOr              string `json:"and_or,omitempty" xml:"and_or,omitempty"`               // Logical operator (AND/OR).
+	SearchType         string `json:"search_type,omitempty" xml:"search_type,omitempty"`     // Type of search operation. (e.g., "like", "is", "is not").
+	Value              string `json:"value,omitempty" xml:"value,omitempty"`                 // Value for the criterion.
+	OpeningParenthesis bool   `json:"opening_paren,omitempty" xml:"opening_paren,omitempty"` // Indicates if there is an opening parenthesis.
+	ClosingParenthesis bool   `json:"closing_paren,omitempty" xml:"closing_paren,omitempty"` // Indicates if there is a closing parenthesis.
 }
 
 // END OF JAMF USER STRUCTS
@@ -805,6 +829,38 @@ type UserLocation struct {
 }
 
 // END OF JAMF COMPUTER HISTORY STRUCTS
+//---------------------------------------------------------------------
+
+// ### Jamf Web Admin Structs
+// ---------------------------------------------------------------------
+// JamfUsers represents a list of user accounts from the Jamf Admin WebUI
+type JamfUsers []JamfUser
+
+// JamfUser represents a single user account record.
+type JamfUser struct {
+	ID                        int    `json:"userId,omitempty"`                    // The unique identifier of the user.
+	Username                  string `json:"username,omitempty"`                  // The user's login name.
+	RealName                  string `json:"realname,omitempty"`                  // The user's full name.
+	Password                  string `json:"password,omitempty"`                  // The user's password.
+	PasswordModified          int64  `json:"passwordModified,omitempty"`          // Timestamp (in seconds) when the password was last modified.
+	Email                     string `json:"email,omitempty"`                     // The user's email address.
+	Phone                     string `json:"phone,omitempty"`                     // The user's phone number.
+	LDAPServerID              string `json:"ldapServerId,omitempty"`              // The LDAP server used for authentication.
+	DistinguishedName         string `json:"distinguishedName,omitempty"`         // The user's distinguished name in LDAP.
+	SiteID                    int    `json:"siteId,omitempty"`                    // The site ID associated with the user.
+	AccessLevel               string `json:"accessLevel,omitempty"`               // The user's access level (e.g., "Full Access", "Limited Access").
+	PrivilegeLevel            string `json:"privilegeLevel,omitempty"`            // The user's privilege level (e.g., "ADMINISTRATOR", "CUSTOM").
+	LastPasswordChange        string `json:"lastPasswordChange,omitempty"`        // The date and time when the password was last changed.
+	ChangePasswordOnNextLogin bool   `json:"changePasswordOnNextLogin,omitempty"` // Indicates if the user must change the password upon next login.
+	FailedLoginAttempts       int    `json:"failedLoginAttempts,omitempty"`       // The number of failed login attempts.
+	ForcePasswordChange       bool   `json:"forcePasswordChange,omitempty"`       // Indicates if the user must change the password upon next login.
+	Expires                   string `json:"expires,omitempty"`                   // The expiration date of the account in ISO 8601 format.
+	WebAdmin                  bool   `json:"webAdmin,omitempty"`                  // Indicates if the user has web administration privileges.
+	AccountStatus             string `json:"accountStatus,omitempty"`             // The status of the user account (e.g., "Enabled", "Disabled").
+	Disabled                  bool   `json:"disabled,omitempty"`                  // Indicates if the user account is disabled.
+}
+
+// END OF JAMF WEB ADMIN STRUCTS
 //---------------------------------------------------------------------
 
 // ### Enums

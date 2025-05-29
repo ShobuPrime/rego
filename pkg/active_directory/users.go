@@ -3,7 +3,7 @@
 
 This file contains functions for user-related operations in Active Directory.
 
-:Copyright: (c) 2024 by Gemini Space Station, LLC, see AUTHORS for more info
+:Copyright: (c) 2025 by Gemini Software Services, LLC., see AUTHORS for more info
 :License: See the LICENSE file for details
 :Author: Anthony Dardano <anthony.dardano@gemini.com>
 */
@@ -26,7 +26,7 @@ func (c *Client) ListAllAdmins() (*Users, error) {
 	}
 
 	attributes := DefaultUserAttributes
-	users, err := do[Users](c, fmt.Sprintf(FILTER_USER_NESTED_GROUP, "Domain Admins", "OU=Groups", c.BaseDN), attributes)
+	users, err := do[Users](c, FILTER_USER_ADMIN, attributes)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +84,25 @@ func (c *Client) DisabledUsers() (*Users, error) {
 
 	attributes := DefaultUserAttributes
 	users, err := do[Users](c, FILTER_USER_DISABLED, attributes)
+	if err != nil {
+		return nil, err
+	}
+
+	c.SetCache(cacheKey, users, 30*time.Minute)
+	return &users, nil
+}
+
+// LockedUsers retrieves all locked users from Active Directory
+func (c *Client) LockedUsers() (*Users, error) {
+	cacheKey := "rego_ad_locked_users"
+
+	var cache Users
+	if c.GetCache(cacheKey, cache) {
+		return &cache, nil
+	}
+
+	attributes := DefaultUserAttributes
+	users, err := do[Users](c, FILTER_USER_LOCKED, attributes)
 	if err != nil {
 		return nil, err
 	}

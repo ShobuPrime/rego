@@ -3,7 +3,7 @@
 
 This package contains some functions involving practical examples of multi-service orchestration.
 
-:Copyright: (c) 2024 by Gemini Space Station, LLC., see AUTHORS for more info
+:Copyright: (c) 2025 by Gemini Software Services, LLC., see AUTHORS for more info
 :License: See the LICENSE file for details
 :Author: Anthony Dardano <anthony.dardano@gemini.com>
 */
@@ -126,11 +126,11 @@ func (c *Client) ADReportToGoogleSheet(group string) error {
 		Range:          "A:Z",
 		MajorDimension: "ROWS",
 	}
-	headers := []string{"SAM Account Name", "First", "Last", "User Principal Name (UPN)", "Display Name", "Group"}
+	headers := []string{"SAM Account Name", "First", "Last", "User Principal Name (UPN)", "Last Login", "Enabled", "Group"}
 	vr.Values = append(vr.Values, headers)
 
 	for _, user := range *users {
-		vr.Values = append(vr.Values, []string{user.SAMAccountName, user.GivenName, user.SN, user.UserPrincipalName, user.DisplayName, group})
+		vr.Values = append(vr.Values, []string{user.SAMAccountName, user.GivenName, user.SN, user.UserPrincipalName, fmt.Sprintf("%v", user.LastLogonTimestamp), fmt.Sprintf("%d", user.UserAccountControl), group})
 	}
 
 	rows := len(vr.Values)

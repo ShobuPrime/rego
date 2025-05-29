@@ -4,7 +4,7 @@
 This package contains all the methods to interact with the Okta Groups API:
 https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Group/#tag/Group
 
-:Copyright: (c) 2023 by Gemini Space Station, LLC., see AUTHORS for more info
+:Copyright: (c) 2025 by Gemini Software Services, LLC., see AUTHORS for more info
 :License: See the LICENSE file for details
 :Author: Anthony Dardano <anthony.dardano@gemini.com>
 */
@@ -117,14 +117,41 @@ func (c *GroupsClient) ListAllGroupRules() (*GroupRules, error) {
 }
 
 /*
+ * # List All Members of a Group
+ * /api/v1/groups/{groupId}/users
+ * - https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Group/#tag/Group/operation/listGroupUsers
+ */
+func (c *GroupsClient) ListGroupMembers(groupID string) (*Users, error) {
+	c.Log.Printf("Listing members of group with ID %s", groupID)
+	url := c.BuildURL(OktaGroups, groupID, "users")
+
+	var cache Users
+	if c.GetCache(url, &cache) {
+		return &cache, nil
+	}
+
+	q := GroupParameters{
+		Limit: 10000,
+	}
+
+	users, err := doPaginated[Users](c.Client, "GET", url, q, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	c.SetCache(url, users, 5*time.Minute)
+	return users, nil
+}
+
+/*
  * # Assign a User to a Group
  * /api/v1/groups/{groupId}/users/{userId}
  * - https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Group/#tag/Group/operation/assignUserToGroup
  */
-func (c *Client) AddUserToGroup(groupID string, userID string) error {
+func (c *GroupsClient) AssignUserToGroup(groupID string, userID string) error {
 	url := c.BuildURL(OktaGroups, groupID, "users", userID)
 
-	_, err := do[interface{}](c, "PUT", url, nil, nil)
+	_, err := do[any](c.Client, "PUT", url, nil, nil)
 	if err != nil {
 		return err
 	}

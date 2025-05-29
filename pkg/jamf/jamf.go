@@ -5,7 +5,7 @@ This package initializes all the methods for functions which interact with the J
 - https://developer.jamf.com/jamf-pro/reference/classic-api
 - https://developer.jamf.com/jamf-pro/reference/jamf-pro-api
 
-:Copyright: (c) 2023 by Gemini Space Station, LLC., see AUTHORS for more info
+:Copyright: (c) 2025 by Gemini Software Services, LLC., see AUTHORS for more info
 :License: See the LICENSE file for details
 :Author: Anthony Dardano <anthony.dardano@gemini.com>
 */
@@ -17,7 +17,9 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -42,7 +44,9 @@ func (c *Client) BuildURL(endpoint string, identifiers ...interface{}) string {
 	for _, id := range identifiers {
 		url = fmt.Sprintf("%s/%v", url, id)
 	}
+	c.HTTP.UpdateAcceptType(fmt.Sprintf("%s, %s;q=0.9", requests.JSON, requests.XML))
 	c.HTTP.UpdateBodyType(requests.JSON)
+	c.HTTP.UpdateContentType(requests.JSON)
 	c.Log.Debug("url:", url)
 	return url
 }
@@ -53,7 +57,9 @@ func (c *Client) BuildClassicURL(endpoint string, identifiers ...interface{}) st
 	for _, id := range identifiers {
 		url = fmt.Sprintf("%s/%v", url, id)
 	}
+	c.HTTP.UpdateAcceptType(fmt.Sprintf("%s, %s;q=0.9", requests.XML, requests.JSON))
 	c.HTTP.UpdateBodyType(requests.XML)
+	c.HTTP.UpdateContentType(requests.XML)
 	c.Log.Debug("url:", url)
 	return url
 }
@@ -199,9 +205,19 @@ func do[T any](c *Client, method string, url string, query interface{}, data int
 	c.Log.Println("Response Status:", res.Status)
 	c.Log.Debug("Response Body:", string(body))
 
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return *new(T), fmt.Errorf("unmarshalling error: %w", err)
+	switch c.HTTP.Headers["Content-Type"] {
+	case requests.JSON:
+		err = json.Unmarshal(body, &result)
+		if err != nil {
+			return *new(T), fmt.Errorf("unmarshalling error: %w", err)
+		}
+	case requests.XML:
+		err = xml.Unmarshal(body, &result)
+		if err != nil {
+			return *new(T), fmt.Errorf("unmarshalling error: %w", err)
+		}
+	default:
+		return *new(T), fmt.Errorf("unsupported content type: %s", c.HTTP.Headers["Content-Type"])
 	}
 
 	return result, nil
@@ -228,7 +244,7 @@ func doConcurrent[T JamfAPIResponse](c *Client, method string, url string, q *De
 	errCh := make(chan error, totalPages)
 
 	// Use a buffered channel as a semaphore to limit concurrent requests.
-	sem := make(chan struct{}, 10)
+	sem := make(chan struct{}, runtime.GOMAXPROCS(0))
 	var wg sync.WaitGroup
 
 	// Start goroutines for each page

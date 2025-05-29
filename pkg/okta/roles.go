@@ -4,7 +4,7 @@
 This package contains all the methods to interact with the Okta Roles API:
 https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Role/#tag/Role
 
-:Copyright: (c) 2023 by Gemini Space Station, LLC., see AUTHORS for more info
+:Copyright: (c) 2025 by Gemini Software Services, LLC., see AUTHORS for more info
 :License: See the LICENSE file for details
 :Author: Anthony Dardano <anthony.dardano@gemini.com>
 */
@@ -14,6 +14,7 @@ package okta
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -78,7 +79,7 @@ func (c *RolesClient) GenerateRoleReport() (*RoleReports, error) {
 	var rolesErrMutex sync.Mutex
 	var rolesErrors []error
 
-	sem := make(chan struct{}, 10)
+	sem := make(chan struct{}, runtime.GOMAXPROCS(0))
 	var wg sync.WaitGroup
 
 	for _, user := range *users {

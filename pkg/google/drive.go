@@ -4,7 +4,7 @@
 This package initializes all the methods for functions which interact with the Google Drive API:
 https://developers.google.com/drive/api/v3/reference/
 
-:Copyright: (c) 2023 by Gemini Space Station, LLC, see AUTHORS for more info
+:Copyright: (c) 2025 by Gemini Software Services, LLC., see AUTHORS for more info
 :License: See the LICENSE file for details
 :Author: Anthony Dardano <anthony.dardano@gemini.com>
 */
@@ -14,6 +14,7 @@ package google
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -320,7 +321,7 @@ func determineParentPath(file *File) string {
 }
 
 func (c *DriveClient) processFileList(q *DriveFileQuery, parentPath string, allFiles *FileList) error {
-	sem := make(chan struct{}, 10)
+	sem := make(chan struct{}, runtime.GOMAXPROCS(0))
 	filesChannel := make(chan *FileList)
 	filesErrChannel := make(chan error)
 

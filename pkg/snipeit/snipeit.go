@@ -4,7 +4,7 @@
 This package initializes all the methods for functions which interact with the SnipeIT API:
 https://snipe-it.readme.io/reference/api-overview
 
-:Copyright: (c) 2023 by Gemini Space Station, LLC., see AUTHORS for more info
+:Copyright: (c) 2025 by Gemini Software Services, LLC., see AUTHORS for more info
 :License: See the LICENSE file for details
 :Author: Anthony Dardano <anthony.dardano@gemini.com>
 */
@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -185,7 +186,7 @@ func doConcurrent[T PaginatedResponse[E], E any](c *Client, method, url string, 
 	}
 
 	// Init concurrency control
-	sem := make(chan struct{}, 10)
+	sem := make(chan struct{}, runtime.GOMAXPROCS(0))
 	var wg sync.WaitGroup
 	var resultsMutex sync.Mutex
 
